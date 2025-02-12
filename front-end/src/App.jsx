@@ -1,80 +1,70 @@
+import { useState, useEffect } from "react";
 import TodoListAddForm from "./components/TodoListAddForm";
 import TodoListItems from "./components/TodoListItems";
-import TodoListEditForm from "./components/TodoListEditForm";
-import { useState, useEffect } from "react";
-import axios from "axios"; // ติดตั้ง axios: npm install axios
-
-const API_URL = "http://localhost:5000/api/todos"; // เปลี่ยนเป็น URL ของ Backend
+import TodoAPI from "./Api/api"; // ✅ Import API Class
 
 function App() {
   const [todos, setTodos] = useState([]);
-  const [editingTodo, setEditingTodo] = useState(null); // เพิ่ม state สำหรับจัดการการแก้ไข Todo
 
-  // ✅ โหลด Todos จาก API เมื่อเปิดหน้าเว็บ
+  // ✅ โหลด Todos จาก API
   useEffect(() => {
-    fetchTodos();
+    const getTodos = async () => {
+      try {
+        const data = await TodoAPI.fetchTodos();
+        setTodos(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    getTodos();
   }, []);
 
-  const fetchTodos = async () => {
-    try {
-      const response = await axios.get(API_URL);
-      setTodos(response.data); // อัปเดต State ด้วยข้อมูลจาก API
-    } catch (error) {
-      console.error("❌ Error fetching todos:", error);
-    }
-  };
-
-  // ✅ เพิ่ม Todo ผ่าน API
+  // ✅ เพิ่ม Todo
   const addTodo = async (text) => {
     try {
-      const response = await axios.post(API_URL, { text });
-      setTodos([...todos, response.data]); // อัปเดต State
+      const newTodo = await TodoAPI.addTodo(text);
+      setTodos([...todos, newTodo]);
     } catch (error) {
-      console.error("❌ Error adding todo:", error);
+      console.error(error);
     }
   };
 
-  // ✅ เปลี่ยนสถานะ "completed" ผ่าน API
+  // ✅ เปลี่ยนสถานะ "completed"
   const handleToggle = async (id) => {
     try {
       const todo = todos.find((t) => t.id === id);
+      if (!todo) return;
+  
       const updatedTodo = { ...todo, completed: !todo.completed };
-
-      await axios.put(`${API_URL}/${id}`, updatedTodo);
-
-      setTodos(todos.map((t) => (t.id === id ? updatedTodo : t))); // อัปเดต State
+  
+      await TodoAPI.toggleTodo(updatedTodo); // ส่ง updatedTodo แทนค่าตรง ๆ
+  
+      setTodos(todos.map((t) => (t.id === id ? updatedTodo : t))); // อัปเดต state
     } catch (error) {
       console.error("❌ Error updating todo:", error);
     }
   };
   
-  
 
-  // ✅ ลบ Todo ผ่าน API
+  // ✅ ลบ Todo
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${API_URL}/${id}`);
-      setTodos(todos.filter((t) => t.id !== id)); // ลบออกจาก State
+      await TodoAPI.deleteTodo(id);
+      setTodos(todos.filter((t) => t.id !== id));
     } catch (error) {
-      console.error("❌ Error deleting todo:", error);
+      console.error(error);
     }
   };
 
-  // ✅ ฟังก์ชันแก้ไข Todo
+  // ✅ แก้ไข Todo
   const handleUpdate = async (id, text) => {
     try {
-      const updatedTodo = { id, text, completed: false };
-      await axios.put(`${API_URL}/${id}`, updatedTodo); // อัปเดตฐานข้อมูล
-
-      setTodos(todos.map((todo) => (todo.id === id ? updatedTodo : todo))); // อัปเดต State
-      setEditingTodo(null); // ปิดฟอร์มแก้ไขหลังจากบันทึก
+      const updatedTodo = await TodoAPI.updateTodo(id, text);
+      setTodos(todos.map((t) => (t.id === id ? updatedTodo : t)));
     } catch (error) {
-      console.error("❌ Error updating todo:", error);
+      console.error(error);
     }
   };
-
-  console.log(todos);
-  console.log(typeof todos);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -85,15 +75,13 @@ function App() {
           <TodoListAddForm addTodo={addTodo} />
         </div>
 
-       
-
         {/* Display Items */}
         <div className="w-full d-flex justify-content-center">
           <TodoListItems
             todos={todos}
             onToggle={handleToggle}
             onDelete={handleDelete}
-            onUpdate={handleUpdate} // ส่งให้ TodoListItems เพื่อจัดการฟอร์มแก้ไข
+            onUpdate={handleUpdate}
           />
         </div>
       </div>
