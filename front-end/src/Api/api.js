@@ -25,23 +25,9 @@ class TodoAPI {
     }
   }
 
-//   // เปลี่ยนสถานะ "completed"
-//   static async toggleTodo(id, completed) {
-//     console.log(id,completed);
-    
-//     // try {
-//     //   const updatedTodo = { completed };
-//     //   await axios.put(`${API_URL}/${id}`, updatedTodo);
-//     //   return updatedTodo;
-//     // } catch (error) {
-//     //   console.error("❌ Error updating todo:", error);
-//     //   throw error;
-//     // }
-//   }
 // เปลี่ยนสถานะ "completed"
+
 static async toggleTodo(updatedTodo) {
-    
-  
     try {
       await axios.put(`${API_URL}/${updatedTodo.id}`, updatedTodo);
       return updatedTodo;
